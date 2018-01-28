@@ -65,10 +65,7 @@ public final class VectorScoringPlugin extends Plugin implements ScriptPlugin {
                 SearchScript.Factory factory = (p, lookup) -> new SearchScript.LeafFactory() {
                     private final double[] inputVector;
                     final String field;
-                    final String term;
                     {
-                        final Object field = p.get("field");
-                        term = p.get("term").toString();
                         if (field == null)
                             throw new IllegalArgumentException("binary_vector_score script requires field input");
                         this.field = field.toString();
