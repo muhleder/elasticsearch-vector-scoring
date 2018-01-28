@@ -66,8 +66,9 @@ public final class VectorScoringPlugin extends Plugin implements ScriptPlugin {
                     private final double[] inputVector;
                     final String field;
                     {
+                        final Object field = p.get("vector_field");
                         if (field == null)
-                            throw new IllegalArgumentException("binary_vector_score script requires field input");
+                            throw new IllegalArgumentException("binary_vector_score script requires field vector_field");
                         this.field = field.toString();
 
                         // get query inputVector - convert to primitive
@@ -105,22 +106,22 @@ public final class VectorScoringPlugin extends Plugin implements ScriptPlugin {
                                      return 0;
                                 }
 
-                                final int size = inputVector.length;
+                                final int input_vector_size = inputVector.length;
 
-                                final ByteArrayDataInput input = new ByteArrayDataInput(bytes);
-                                input.readVInt(); // returns the number of values which should be 1, MUST appear hear since it affect the next calls
-                                final int len = input.readVInt(); // returns the number of bytes to read
-                                if(len != size * DOUBLE_SIZE) {
+                                final ByteArrayDataInput doc_vector = new ByteArrayDataInput(bytes);
+                                doc_vector.readVInt(); // returns the number of values which should be 1, MUST appear hear since it affect the next calls
+                                final int doc_vector_length = doc_vector.readVInt(); // returns the number of bytes to read
+                                if(doc_vector_length != input_vector_size * DOUBLE_SIZE) {
                                     return 0.0;
                                 }
-                                final int position = input.getPosition();
-                                final DoubleBuffer doubleBuffer = ByteBuffer.wrap(bytes, position, len).asDoubleBuffer();
+                                final int position = doc_vector.getPosition();
+                                final DoubleBuffer doubleBuffer = ByteBuffer.wrap(bytes, position, doc_vector_length).asDoubleBuffer();
 
-                                final double[] docVector = new double[size];
+                                final double[] docVector = new double[input_vector_size];
                                 doubleBuffer.get(docVector);
 
                                 double score = 0;
-                                for (int i = 0; i < size; i++) {
+                                for (int i = 0; i < input_vector_size; i++) {
                                     score += docVector[i] * inputVector[i];
                                 }
                                 return score;
