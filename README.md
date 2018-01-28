@@ -19,6 +19,12 @@ This Plugin allows you to score Elasticsearch documents based on embedding-vecto
 * `mvn package` to compile the plugin as a zip file
 * In Elasticsearch run `elasticsearch-plugin install file:/PATH_TO_ZIP` to install plugin
 
+ 
+## Debugging
+Place this into an eleasticsearch checkout, add the plugin to the projects list in `/settings.gradle` and run 
+
+    gradle :plugins:vector-scoring:run --debug-jvm
+
 
 
 ## Usage
@@ -29,7 +35,7 @@ This Plugin allows you to score Elasticsearch documents based on embedding-vecto
    {
    	"id": 1,
    	....
-   	"embedding_vector": "v7l48eAAAAA/s4VHwAAAAD+R7I5AAAAAv8MBMAAAAAA/yEI3AAAAAL/IWkeAAAAAv7s480AAAAC/v6DUgAAAAL+wJi0gAAAAP76VqUAAAAC/sL1ZYAAAAL/dyq/gAAAAP62FVcAAAAC/tQRvYAAAAL+j6ycAAAAAP6v1KcAAAAC/bN5hQAAAAL+u9ItAAAAAP4ckTsAAAAC/pmkjYAAAAD+cYpwAAAAAP5renEAAAAC/qY0HQAAAAD+wyYGgAAAAP5WrCcAAAAA/qzjTQAAAAD++LBzAAAAAP49wNKAAAAC/vu/aIAAAAD+hqXfAAAAAP4FfNCAAAAA/pjC64AAAAL+qwT2gAAAAv6S3OGAAAAC/gfMtgAAAAD/If5ZAAAAAP5mcXOAAAAC/xYAU4AAAAL+2nlfAAAAAP7sCXOAAAAA/petBIAAAAD9soYnAAAAAv5R7X+AAAAC/pgM/IAAAAL+ojI/gAAAAP2gPz2AAAAA/3FonoAAAAL/IHg1AAAAAv6p1SmAAAAA/tvKlQAAAAD/I2OMAAAAAP3FBiCAAAAA/wEd8IAAAAL94wI9AAAAAP2Y1IIAAAAA/rnS4wAAAAL9vriVgAAAAv1QxoCAAAAC/1/qu4AAAAL+inZFAAAAAv7aGA+AAAAA/lqYVYAAAAD+kNP0AAAAAP730BiAAAAA="
+   	"content_vector": "v7l48eAAAAA/s4VHwAAAAD+R7I5AAAAAv8MBMAAAAAA/yEI3AAAAAL/IWkeAAAAAv7s480AAAAC/v6DUgAAAAL+wJi0gAAAAP76VqUAAAAC/sL1ZYAAAAL/dyq/gAAAAP62FVcAAAAC/tQRvYAAAAL+j6ycAAAAAP6v1KcAAAAC/bN5hQAAAAL+u9ItAAAAAP4ckTsAAAAC/pmkjYAAAAD+cYpwAAAAAP5renEAAAAC/qY0HQAAAAD+wyYGgAAAAP5WrCcAAAAA/qzjTQAAAAD++LBzAAAAAP49wNKAAAAC/vu/aIAAAAD+hqXfAAAAAP4FfNCAAAAA/pjC64AAAAL+qwT2gAAAAv6S3OGAAAAC/gfMtgAAAAD/If5ZAAAAAP5mcXOAAAAC/xYAU4AAAAL+2nlfAAAAAP7sCXOAAAAA/petBIAAAAD9soYnAAAAAv5R7X+AAAAC/pgM/IAAAAL+ojI/gAAAAP2gPz2AAAAA/3FonoAAAAL/IHg1AAAAAv6p1SmAAAAA/tvKlQAAAAD/I2OMAAAAAP3FBiCAAAAA/wEd8IAAAAL94wI9AAAAAP2Y1IIAAAAA/rnS4wAAAAL9vriVgAAAAv1QxoCAAAAC/1/qu4AAAAL+inZFAAAAAv7aGA+AAAAA/lqYVYAAAAD+kNP0AAAAAP730BiAAAAA="
    }
    ```
 * Use this field mapping:
@@ -70,7 +76,7 @@ POST /_search
               "source": "vector_scoring",
               "lang": "binary_vector_score",
               "params": {
-                "field": "embedding_vector",
+                "vector_field": "content_vector",
                 "vector": [
                   -0.09217305481433868,
                   0.010635560378432274,
@@ -148,10 +154,6 @@ POST /_search
 ```
 * The example above shows a vector of 64 dimensions
 * Parameters:
-   1. `field`: The field containing the base64 vector.
-   2. `cosine`: Boolean. if true - use cosine-similarity, else use dot-product.
+   1. `field_vector`: The field containing the base64 vector.
    3. `vector`: The vector (comma separated) to compare to.
- 
-
-
 
