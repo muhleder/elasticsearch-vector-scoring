@@ -21,9 +21,3 @@ esplugin {
   description 'Provides a fast vector multiplication script.'
   classname 'com.gosololaw.elasticsearch.VectorScoringPlugin'
 }
-// Not published so no need to assemble
-tasks.remove(assemble)
-build.dependsOn.remove('assemble')
-
-// no unit tests
-test.enabled = false

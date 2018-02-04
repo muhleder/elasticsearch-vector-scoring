@@ -11,17 +11,29 @@ This Plugin allows you to score Elasticsearch documents based on embedding-vecto
 
 
 ## Elasticsearch version
-* Currently designed for Elasticsearch 6.1.0.
+* Currently designed for Elasticsearch 6.1.2.
 
 
-## Maven configuration
-* Clone the project
-* `mvn package` to compile the plugin as a zip file
-* In Elasticsearch run `elasticsearch-plugin install file:/PATH_TO_ZIP` to install plugin
+## Setup
+
+In order to install this plugin, you need to create a zip distribution first by running
+
+```bash
+gradle clean assemble
+```
+
+This will produce a zip file in `build/distributions`.
+
+After building the zip file, you can install it like this
+
+```bash
+elasticsearch-plugin install file:///path/to/iplugin/build/distribution/FILENAME.zip
+```
+
 
  
 ## Debugging
-Place this into an eleasticsearch checkout, add the plugin to the projects list in `/settings.gradle` and run 
+Place this into an elasticsearch checkout, add the plugin to the projects list in `/settings.gradle` and run 
 
     gradle :plugins:vector-scoring:run --debug-jvm
 
