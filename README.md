@@ -4,7 +4,6 @@ This Plugin allows you to score Elasticsearch documents based on embedding-vecto
 
 ## General
 * Updated version for ES 6.1 of [this plugin](https://github.com/lior-k/fast-elasticsearch-vector-scoring)
-* Cosine support removed.
 * This plugin was inspired from [This elasticsearch vector scoring plugin](https://github.com/MLnick/elasticsearch-vector-scoring) and [this discussion](https://discuss.elastic.co/t/vector-scoring/85227/6) to achieve 10 times faster processing over the original.
 * lior-k gained this substantial speed improvement by using the lucene index directly
 * lior-k developed it for their workplace which needs to pick KNN from a set of ~4M vectors. Their current ES setup is able to answer this in ~80ms

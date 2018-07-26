@@ -60,11 +60,15 @@ public final class VectorScoringPlugin extends Plugin implements ScriptPlugin {
             if (!context.equals(SearchScript.CONTEXT)) {
                 throw new IllegalArgumentException(getType() + " scripts cannot be used for context [" + context.name + "]");
             }
+
             // we use the script "source" as the script identifier
             if ("vector_scoring".equals(scriptSource)) {
                 SearchScript.Factory factory = (p, lookup) -> new SearchScript.LeafFactory() {
+
                     private final double[] inputVector;
+                    private final double inputVectorNorm;
                     final String field;
+                    final boolean cosine;
                     {
                         final Object field = p.get("vector_field");
                         if (field == null)
@@ -74,8 +78,22 @@ public final class VectorScoringPlugin extends Plugin implements ScriptPlugin {
                         // get query inputVector - convert to primitive
                         final ArrayList<Double> tmp = (ArrayList<Double>) p.get("vector");
                         this.inputVector = new double[tmp.size()];
+
                         for (int i = 0; i < inputVector.length; i++) {
                             inputVector[i] = tmp.get(i);
+                        }
+
+                        final Object cosine = p.get("cosine");
+                        this.cosine = cosine != null && (boolean)cosine;
+
+                        if (this.cosine) {
+                            double norm = 0.0f;
+                            for (int i = 0; i < inputVector.length; i++) {
+                                norm += inputVector[i] * inputVector[i];
+                            }
+                            this.inputVectorNorm = Math.sqrt(norm);
+                        } else {
+                            this.inputVectorNorm = 0;
                         }
                     }
 
@@ -101,9 +119,9 @@ public final class VectorScoringPlugin extends Plugin implements ScriptPlugin {
                                 if (!is_value) return 0;
                                 final byte[] bytes;
                                 try {
-                                     bytes = accessor.binaryValue().bytes;
+                                    bytes = accessor.binaryValue().bytes;
                                 } catch (IOException e) {
-                                     return 0;
+                                    return 0;
                                 }
 
                                 final int input_vector_size = inputVector.length;
@@ -124,6 +142,18 @@ public final class VectorScoringPlugin extends Plugin implements ScriptPlugin {
                                 for (int i = 0; i < input_vector_size; i++) {
                                     score += docVector[i] * inputVector[i];
                                 }
+
+                                if (cosine) {
+                                    double docVectorNorm = 0.0f;
+                                    for (int i = 0; i < input_vector_size; i++) {
+                                        docVectorNorm += docVector[i] * docVector[i];
+                                    }
+                                    docVectorNorm = Math.sqrt(docVectorNorm);
+
+                                    score /= inputVectorNorm;
+                                    score /= docVectorNorm;
+                                }
+
                                 return score;
                             }
                         };
