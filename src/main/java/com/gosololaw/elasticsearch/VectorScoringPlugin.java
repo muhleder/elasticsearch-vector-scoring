@@ -60,11 +60,16 @@ public final class VectorScoringPlugin extends Plugin implements ScriptPlugin {
             if (!context.equals(SearchScript.CONTEXT)) {
                 throw new IllegalArgumentException(getType() + " scripts cannot be used for context [" + context.name + "]");
             }
+
             // we use the script "source" as the script identifier
             if ("vector_scoring".equals(scriptSource)) {
                 SearchScript.Factory factory = (p, lookup) -> new SearchScript.LeafFactory() {
+
                     private final double[] inputVector;
+                    private final double inputVectorNorm;
                     final String field;
+                    final boolean useStoredVectorNorm;
+                    final boolean cosine;
                     {
                         final Object field = p.get("vector_field");
                         if (field == null)
@@ -74,9 +79,26 @@ public final class VectorScoringPlugin extends Plugin implements ScriptPlugin {
                         // get query inputVector - convert to primitive
                         final ArrayList<Double> tmp = (ArrayList<Double>) p.get("vector");
                         this.inputVector = new double[tmp.size()];
+
                         for (int i = 0; i < inputVector.length; i++) {
                             inputVector[i] = tmp.get(i);
                         }
+
+                        final Object cosine = p.get("cosine");
+                        this.cosine = cosine != null && (boolean)cosine;
+
+                        if (this.cosine) {
+                            double norm = 0.0f;
+                            for (int i = 0; i < inputVector.length; i++) {
+                                norm += inputVector[i] * inputVector[i];
+                            }
+                            this.inputVectorNorm = Math.sqrt(norm);
+                        } else {
+                            this.inputVectorNorm = 0;
+                        }
+
+                        final Object useStoredVectorNorm = p.get("use_stored_vector_norm");
+                        this.useStoredVectorNorm = useStoredVectorNorm != null && (boolean)useStoredVectorNorm;
                     }
 
                     @Override
@@ -101,17 +123,23 @@ public final class VectorScoringPlugin extends Plugin implements ScriptPlugin {
                                 if (!is_value) return 0;
                                 final byte[] bytes;
                                 try {
-                                     bytes = accessor.binaryValue().bytes;
+                                    bytes = accessor.binaryValue().bytes;
                                 } catch (IOException e) {
-                                     return 0;
+                                    return 0;
                                 }
 
                                 final int input_vector_size = inputVector.length;
 
                                 final ByteArrayDataInput doc_vector = new ByteArrayDataInput(bytes);
+
                                 doc_vector.readVInt(); // returns the number of values which should be 1, MUST appear hear since it affect the next calls
-                                final int doc_vector_length = doc_vector.readVInt(); // returns the number of bytes to read
-                                if(doc_vector_length != input_vector_size * DOUBLE_SIZE) {
+                                int doc_vector_length = doc_vector.readVInt(); // returns the number of bytes to read
+
+                                if (useStoredVectorNorm) {
+                                    doc_vector_length = doc_vector_length - DOUBLE_SIZE;
+                                }
+
+                                if(doc_vector_length < input_vector_size * DOUBLE_SIZE) {
                                     return 0.0;
                                 }
                                 final int position = doc_vector.getPosition();
@@ -124,6 +152,28 @@ public final class VectorScoringPlugin extends Plugin implements ScriptPlugin {
                                 for (int i = 0; i < input_vector_size; i++) {
                                     score += docVector[i] * inputVector[i];
                                 }
+
+                                if (!cosine) {
+                                    return score;
+                                }
+
+
+                                double docVectorNorm = 0.0f;
+
+                                if (useStoredVectorNorm) {
+                                    doc_vector.skipBytes(doc_vector_length);
+                                    docVectorNorm = Double.longBitsToDouble(doc_vector.readLong());
+                                } else {
+                                    for (int i = 0; i < input_vector_size; i++) {
+                                        docVectorNorm += docVector[i] * docVector[i];
+                                    }
+                                    docVectorNorm = Math.sqrt(docVectorNorm);
+                                }
+
+                                score /= inputVectorNorm;
+                                score /= docVectorNorm;
+
+
                                 return score;
                             }
                         };
